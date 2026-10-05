@@ -72,7 +72,7 @@ def main():
             "id": f"{USER}/{NAME}", "title": NAME, "code_file": "run.py", "language": "python",
             "kernel_type": "script", "is_private": True, "enable_gpu": True, "enable_internet": True,
             "dataset_sources": [DATASET], "competition_sources": [],
-            "kernel_sources": [f"{USER}/mapwise-train"]}, indent=2))
+            "kernel_sources": [f"{USER}/mapwise-train-v2"]}, indent=2))
         print(kaggle("kernels", "push", "-p", str(d)))
     elif op == "status":
         print(kaggle("kernels", "status", f"{USER}/{NAME}", check=False))

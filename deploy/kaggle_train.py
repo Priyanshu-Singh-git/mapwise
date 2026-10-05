@@ -124,6 +124,29 @@ def main():
                    .replace("%EPOCHS%", "2").replace("%BATCH%", "8").replace("%CROP%", "384")
                    .replace("--workers 2", "--workers 2 --limit 120"))
         push("mapwise-sanity", code, gpu=True)
+    elif op == "peek":
+        # Kaggle publishes a kernel's own log only once it finishes, but a second kernel can
+        # mount the running job's output and read the rows it has already written.
+        d = ROOT / "kaggle_jobs" / "mapwise-peek"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "run.py").write_text(
+            "import glob, json\n"
+            "logs = glob.glob('/kaggle/input/**/log.jsonl', recursive=True)\n"
+            "print('LOGS:', logs, flush=True)\n"
+            "for L in logs:\n"
+            "    rows = [json.loads(x) for x in open(L)]\n"
+            "    print('EPOCHS_SO_FAR:', len(rows), flush=True)\n"
+            "    for r in rows[:2] + rows[-4:]:\n"
+            "        print('ROW', json.dumps(r), flush=True)\n"
+            "for m in glob.glob('/kaggle/input/**/meta.json', recursive=True):\n"
+            "    print('META', open(m).read()[:500], flush=True)\n",
+            encoding="utf-8")
+        (d / "kernel-metadata.json").write_text(json.dumps({
+            "id": f"{USER}/mapwise-peek", "title": "mapwise-peek", "code_file": "run.py",
+            "language": "python", "kernel_type": "script", "is_private": True,
+            "enable_gpu": False, "enable_internet": True, "dataset_sources": [],
+            "competition_sources": [], "kernel_sources": [f"{USER}/mapwise-train-v2"]}, indent=2))
+        print(kaggle("kernels", "push", "-p", str(d)))
     elif op in ("status", "probe-status"):
         name = {"probe-status": "mapwise-probe"}.get(op, sys.argv[2] if len(sys.argv) > 2 else "mapwise-train")
         print(kaggle("kernels", "status", f"{USER}/{name}", check=False))

@@ -56,14 +56,14 @@
     0.224,
     0.225
   ],
-  "mIoU": 0.543,
+  "mIoU": 0.6853,
   "per_class": {
-    "urban_land": 0.8,
-    "agriculture_land": 0.8385,
-    "rangeland": 0.3439,
-    "forest_land": 0.6276,
-    "water": 0.7398,
-    "barren_land": 0.4513,
+    "urban_land": 0.7621,
+    "agriculture_land": 0.8678,
+    "rangeland": 0.3456,
+    "forest_land": 0.7869,
+    "water": 0.8312,
+    "barren_land": 0.5183,
     "unknown": 0.0
   }
 }

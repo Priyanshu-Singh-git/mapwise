@@ -104,7 +104,7 @@ def main():
     cd = data / "class_dict.csv"
     names, colors = load_class_dict(cd) if cd.exists() else (meta["classes"], None)
 
-    net = UNetResNet34(len(names), pretrained=False).to(dev).eval()
+    net = UNetResNet34(len(names), pretrained=False, encoder=meta.get('encoder','resnet34')).to(dev).eval()
     net.load_state_dict(ck["state"])
 
     FIG = ROOT / "assets" / "figures"; FIG.mkdir(parents=True, exist_ok=True)

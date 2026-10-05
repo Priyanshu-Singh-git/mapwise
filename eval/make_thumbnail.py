@@ -63,7 +63,7 @@ def main():
     data = Path(args.data)
     cd = data / "class_dict.csv"
     names, colors = load_class_dict(cd)
-    net = UNetResNet34(len(names), pretrained=False).to(dev).eval()
+    net = UNetResNet34(len(names), pretrained=False, encoder=ck.get('meta',{}).get('encoder','resnet34')).to(dev).eval()
     net.load_state_dict(ck["state"])
 
     tiles = sorted((data / "train").glob("*_sat.jpg"))[-args.scan:]

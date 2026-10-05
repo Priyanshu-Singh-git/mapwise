@@ -93,8 +93,11 @@ def main():
         dr.text((x + 34, y + 24), f"{share[i] * 100:.0f}% of ground", font=f_legs, fill=MUTED)
         x += int(dr.textlength(label, font=f_leg)) + 150
 
-    foot = ("U-Net  \u00b7  ResNet-34 encoder, decoder written from scratch  \u00b7  "
-            "mean IoU 54%, 84% pixel accuracy  \u00b7  runs in the browser")
+    # read the live metrics rather than hardcoding, so the footer can never go stale
+    met = json.loads((ROOT / "out" / "deck_metrics.json").read_text())
+    enc = {"resnet50": "ResNet-50", "resnet34": "ResNet-34"}.get(met.get("encoder", "resnet34"), "ResNet-34")
+    foot = (f"U-Net  ·  {enc} encoder, decoder written from scratch  ·  "
+            f"mean IoU {met['mIoU']*100:.0f}%, {met['pixacc']*100:.0f}% pixel accuracy  ·  runs in the browser")
     dr.text(((W - dr.textlength(foot, font=f_foot)) / 2, H - 48), foot, font=f_foot, fill=MUTED)
 
     out = FIG / "thumbnail.png"

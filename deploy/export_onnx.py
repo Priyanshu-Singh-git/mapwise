@@ -31,7 +31,9 @@ def main():
     ck = torch.load(args.ckpt, map_location="cpu", weights_only=False)
     meta = ck.get("meta", {})
     names = meta.get("classes", CLASSES)
-    net = UNetResNet34(len(names), pretrained=False).eval()
+    enc = meta.get("encoder", "resnet34")
+    net = UNetResNet34(len(names), pretrained=False, encoder=enc).eval()
+    print("encoder:", enc)
     net.load_state_dict(ck["state"])
 
     out = Path(args.out); out.parent.mkdir(parents=True, exist_ok=True)
