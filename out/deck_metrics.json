@@ -1,0 +1,27 @@
+{
+  "mIoU": 0.543,
+  "pixacc": 0.8383,
+  "epoch": 22,
+  "epochs": 24,
+  "minutes": 40.6,
+  "per_class": {
+    "urban_land": 0.8,
+    "agriculture_land": 0.8385,
+    "rangeland": 0.3439,
+    "forest_land": 0.6276,
+    "water": 0.7398,
+    "barren_land": 0.4513,
+    "unknown": 0.0
+  },
+  "classes": [
+    "urban_land",
+    "agriculture_land",
+    "rangeland",
+    "forest_land",
+    "water",
+    "barren_land",
+    "unknown"
+  ],
+  "n_train": 723,
+  "n_val": 80
+}

@@ -1,0 +1,28 @@
+# --- training artifacts (checkpoints are ~98 MB each) ---
+out/mapwise/*.pt
+out/_*/
+*.ckpt
+
+# the fp32 ONNX is only an export intermediate; the demo ships the 24 MB int8 model
+docs/models/mapwise.onnx
+
+# --- kaggle scratch ---
+kaggle_jobs/
+kaggle_runs/
+
+# --- node ---
+node_modules/
+presentation/node_modules/
+
+# --- python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# --- os / editor ---
+Thumbs.db
+.DS_Store
+.vscode/
+.idea/

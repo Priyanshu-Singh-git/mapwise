@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MapWise · land cover from satellite imagery</title>
+<meta name="description" content="Drop a satellite tile and get every pixel classified into land-cover types — urban, agriculture, forest, water and more. Runs entirely in your browser.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 rx=%2224%22 fill=%22%23262320%22/%3E%3Cpath d=%22M14 70l24-34 18 22 12-14 18 26z%22 fill=%22%23E8622A%22/%3E%3C/svg%3E">
+<style>
+  :root { color-scheme: light; --bg:#E8E1D2; --card:#EFEADD; --ink:#262320; --ink2:#3A352F;
+          --muted:#8A8176; --line:#CDC4B2; --accent:#E8622A; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:16px/1.55 "Inter","Segoe UI Variable","Segoe UI",system-ui,sans-serif; }
+  .wrap { max-width:1180px; margin:0 auto; padding:26px 16px 64px; }
+  .top { display:flex; justify-content:space-between; align-items:center; font-size:12px;
+         color:var(--muted); letter-spacing:.14em; text-transform:uppercase; }
+  .top b { color:var(--ink); }
+  .rule { width:56px; height:4px; background:var(--accent); margin:22px 0 14px; }
+  h1 { font-size:clamp(42px,8vw,86px); line-height:.94; letter-spacing:-.03em; margin:0 0 14px; font-weight:800; }
+  .usp { font-size:clamp(17px,2.2vw,22px); max-width:760px; margin:0 0 26px; color:var(--ink2); }
+  .grid { display:grid; grid-template-columns:330px 1fr; gap:18px; align-items:start; }
+  @media (max-width:900px){ .grid{ grid-template-columns:1fr; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:20px; }
+  .num { font-size:12px; font-weight:700; color:var(--muted); letter-spacing:.12em; text-transform:uppercase; }
+  .btn { display:flex; align-items:center; justify-content:center; gap:9px; width:100%; border:0;
+         border-radius:999px; padding:13px 18px; font:700 15px inherit; cursor:pointer; margin-top:10px;
+         background:var(--accent); color:#fff; }
+  .btn.ghost { background:transparent; border:1.5px solid var(--ink); color:var(--ink); }
+  .btn:disabled { opacity:.45; cursor:not-allowed; }
+  #drop { border:2px dashed var(--line); border-radius:16px; padding:26px 14px; text-align:center;
+          color:var(--muted); font-size:14px; cursor:pointer; transition:.15s; }
+  #drop.hot { border-color:var(--accent); background:#fff6f1; color:var(--ink); }
+  .samples { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .samples img { width:62px; height:62px; object-fit:cover; border-radius:10px; cursor:pointer;
+                 border:2px solid transparent; }
+  .samples img:hover, .samples img.sel { border-color:var(--accent); }
+  .stage { position:relative; width:100%; aspect-ratio:1; background:#ddd6c6; border-radius:16px; overflow:hidden; }
+  .stage canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  #maskC { opacity:.75; }
+  .ctl { display:flex; align-items:center; gap:12px; margin-top:14px; font-size:14px; color:var(--muted); }
+  .ctl input[type=range] { flex:1; accent-color:var(--accent); }
+  table { width:100%; border-collapse:collapse; margin-top:6px; font-size:14px; }
+  td { padding:5px 0; }
+  td.sw { width:22px; } td.sw i { display:block; width:14px; height:14px; border-radius:4px; border:1px solid #0002; }
+  td.pc { text-align:right; font-variant-numeric:tabular-nums; font-weight:700; }
+  .bar { height:5px; border-radius:3px; background:#0001; overflow:hidden; margin-top:2px; }
+  .bar i { display:block; height:100%; }
+  .status { font-size:13px; color:var(--muted); margin-top:10px; min-height:20px; }
+  footer { margin-top:38px; font-size:13px; color:var(--muted); }
+  a { color:var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><b>MapWise</b><span>Semantic segmentation · runs in your browser</span></div>
+  <div class="rule"></div>
+  <h1>Every pixel,<br>classified.</h1>
+  <p class="usp">Drop in a satellite tile. A U-Net labels all 262,144 pixels into seven land-cover
+     types and reports how much of the ground each one covers.</p>
+
+  <div class="grid">
+    <div>
+      <div class="card">
+        <div class="num">01 · Input</div>
+        <div id="drop">Drop a satellite image here<br><small>or click to choose</small></div>
+        <input id="file" type="file" accept="image/*" hidden>
+        <div class="num" style="margin-top:16px">Or try a sample</div>
+        <div class="samples" id="samples"></div>
+        <button class="btn" id="run" disabled>Classify</button>
+        <div class="status" id="status">Loading model…</div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="num">03 · Ground cover</div>
+        <table id="legend"></table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="num">02 · Result</div>
+      <div class="stage">
+        <canvas id="imgC"></canvas>
+        <canvas id="maskC"></canvas>
+      </div>
+      <div class="ctl">
+        <span>Mask</span>
+        <input id="op" type="range" min="0" max="100" value="75">
+        <span id="opv">75%</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    U-Net with a ResNet-34 encoder, trained on DeepGlobe land cover. Inference runs locally via
+    onnxruntime-web — your image never leaves the device.
+    <span id="metrics"></span>
+  </footer>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

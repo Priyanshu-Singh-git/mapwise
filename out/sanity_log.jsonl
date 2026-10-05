@@ -1,0 +1,2 @@
+{"epoch": 1, "loss": 1.2817, "mIoU": 0.283, "pixacc": 0.6883, "minutes": 0.3, "per_class": {"urban_land": 0.6092, "agriculture_land": 0.6853, "rangeland": 0.0001, "forest_land": 0.4026, "water": 0.2839, "barren_land": 0.0, "unknown": 0.0}}
+{"epoch": 2, "loss": 1.1766, "mIoU": 0.2466, "pixacc": 0.6099, "minutes": 0.6, "per_class": {"urban_land": 0.5903, "agriculture_land": 0.6237, "rangeland": 0.0138, "forest_land": 0.3933, "water": 0.1052, "barren_land": 0.0, "unknown": 0.0}}

@@ -1,0 +1,33 @@
+{
+  "classes": [
+    "urban_land",
+    "agriculture_land",
+    "rangeland",
+    "forest_land",
+    "water",
+    "barren_land",
+    "unknown"
+  ],
+  "n_train": 723,
+  "n_val": 80,
+  "crop": 512,
+  "pixel_counts": [
+    2064630,
+    10508438,
+    1226292,
+    651935,
+    355394,
+    921950,
+    1
+  ],
+  "class_weights": [
+    0.005,
+    0.002,
+    0.006,
+    0.009,
+    0.012,
+    0.007,
+    6.959
+  ],
+  "device": "cuda"
+}
