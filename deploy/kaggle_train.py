@@ -73,7 +73,7 @@ assert cands, "no train/*_sat.jpg found under /kaggle/input"
 D = os.path.dirname(os.path.dirname(cands[0]))
 print("DATA ROOT:", D, "train tiles:", len(cands), flush=True)
 r = subprocess.run(f"python train/train_seg.py --data {D} --out /kaggle/working/out "
-                   "--epochs %EPOCHS% --batch %BATCH% --crop %CROP% --workers 2", shell=True)
+                   "--epochs %EPOCHS% --batch %BATCH% --crop %CROP% --workers 2 %EXTRA%", shell=True)
 print("<<< train exit", r.returncode, flush=True)
 import glob; print("outputs:", glob.glob("/kaggle/working/out/*"), flush=True)
 '''
@@ -106,8 +106,18 @@ def main():
         files = {f: (ROOT / f).read_text(encoding="utf-8") for f in SRC}
         # flatten src/mapwise/* so the training script's sys.path trick still resolves
         code = (RUN.replace("%FILES%", repr(json.dumps(files)))
-                   .replace("%EPOCHS%", "24").replace("%BATCH%", "8").replace("%CROP%", "512"))
+                   .replace("%EPOCHS%", "24").replace("%BATCH%", "8").replace("%CROP%", "512")
+                   .replace("%EXTRA%", ""))
         push("mapwise-train", code, gpu=True)
+    elif op == "push-v2":
+        files = {f: (ROOT / f).read_text(encoding="utf-8") for f in SRC}
+        # bigger encoder + higher-resolution crops + longer schedule + TTA at validation.
+        # batch drops to 4: resnet50 at 768px needs roughly 4x the activation memory of
+        # resnet34 at 512px, and the T4 has 15.6 GB.
+        code = (RUN.replace("%FILES%", repr(json.dumps(files)))
+                   .replace("%EPOCHS%", "60").replace("%BATCH%", "4").replace("%CROP%", "768")
+                   .replace("%EXTRA%", "--encoder resnet50 --tta --lr 2e-4"))
+        push("mapwise-train-v2", code, gpu=True)
     elif op == "sanity":
         files = {f: (ROOT / f).read_text(encoding="utf-8") for f in SRC}
         code = (RUN.replace("%FILES%", repr(json.dumps(files)))

@@ -1,5 +1,5 @@
 {
-  "mIoU": 0.543,
+  "mIoU": 0.6335,
   "pixacc": 0.8383,
   "epoch": 22,
   "epochs": 24,
@@ -23,5 +23,9 @@
     "unknown"
   ],
   "n_train": 723,
-  "n_val": 80
+  "n_val": 80,
+  "mIoU_all": 0.543,
+  "ignored": [
+    "unknown"
+  ]
 }

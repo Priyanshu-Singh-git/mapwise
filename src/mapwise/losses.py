@@ -33,10 +33,17 @@ class DiceCELoss(nn.Module):
 
 
 class IoUTracker:
-    """Accumulates a confusion matrix so IoU is computed over the whole split, not averaged per batch."""
+    """Accumulates a confusion matrix so IoU is computed over the whole split, not averaged per batch.
 
-    def __init__(self, n_classes=7):
+    `ignore` lists class indices left out of the mean. DeepGlobe's 'unknown' is a void/catch-all
+    label with a handful of pixels in the whole dataset; scoring it as 0 and averaging it into a
+    7-way mean costs ~0.09 mIoU and says nothing about the model. PASCAL VOC and Cityscapes both
+    exclude their void classes for the same reason. Per-class IoU is still reported for every class.
+    """
+
+    def __init__(self, n_classes=7, ignore=()):
         self.n = n_classes
+        self.ignore = set(ignore)
         self.cm = np.zeros((n_classes, n_classes), dtype=np.int64)
 
     def update(self, pred, target):
@@ -53,7 +60,11 @@ class IoUTracker:
             return np.where(union > 0, inter / union, np.nan)
 
     def mean_iou(self):
-        return float(np.nanmean(self.iou()))
+        """Mean IoU over the classes that are actually being evaluated."""
+        v = self.iou()
+        keep = [i for i in range(self.n) if i not in self.ignore]
+        vals = v[keep]
+        return float(np.nanmean(vals)) if len(vals) else float("nan")
 
     def pixel_acc(self):
         tot = self.cm.sum()

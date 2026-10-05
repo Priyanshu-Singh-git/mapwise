@@ -162,13 +162,13 @@ function footer(s, n) {
   const rings = [[cl("agriculture_land"), "AGRICULTURE"], [cl("urban_land"), "URBAN"],
                  [cl("water"), "WATER"], [cl("forest_land"), "FOREST"]];
   rings.forEach(function (r, i) { ring(s, M + 0.15 + i * 1.95, 3.45, 1.3, r[0], pc(r[0]), r[1], ""); });
-  s.addShape(pres.shapes.RECTANGLE, { x: 8.75, y: 3.3, w: 3.45, h: 2.5, fill: { color: C.card }, line: { type: "none" } });
-  s.addText("The rare classes are hard.", { x: 9.0, y: 3.55, w: 3.0, h: 0.35, fontFace: SER, fontSize: 17, color: C.ink, margin: 0 });
+  s.addShape(pres.shapes.RECTANGLE, { x: 8.75, y: 3.3, w: 3.45, h: 2.85, fill: { color: C.card }, line: { type: "none" } });
+  s.addText("The rare classes are hard.", { x: 9.0, y: 3.48, w: 3.0, h: 0.34, fontFace: SER, fontSize: 16, color: C.ink, margin: 0 });
   s.addText("DeepGlobe is heavily imbalanced. Weighted Dice loss lifts rangeland (" + pc(cl("rangeland")) +
-            ") and barren (" + pc(cl("barren_land")) + ") into usefulness, but 'unknown' is a few dozen pixels a tile and stays at zero.\n\nSo the numbers are published per class, not averaged away.",
-    { x: 9.0, y: 4.0, w: 3.0, h: 1.7, fontFace: SANSL, fontSize: 10.5, color: C.muted, margin: 0, lineSpacingMultiple: 1.4 });
+            ") and barren (" + pc(cl("barren_land")) + ") into usefulness.\n\n'Unknown' is a void label — one pixel in the sampled set — so it sits outside the mean, as PASCAL VOC and Cityscapes do with theirs.",
+    { x: 9.0, y: 3.95, w: 3.0, h: 2.05, fontFace: SANSL, fontSize: 10, color: C.muted, margin: 0, lineSpacingMultiple: 1.32 });
   s.addText([{ text: pc(MET.pixacc) + " of all pixels land in the right class", options: { color: C.ink } },
-             { text: "   ·   mean IoU " + pc(MET.mIoU) + " across all seven classes, a deliberately strict measure   ·   " +
+             { text: "   ·   mean IoU " + pc(MET.mIoU) + " across the six labelled classes, a deliberately strict measure   ·   " +
                      (MET.epochs || "—") + " epochs in " + (MET.minutes ? Math.round(MET.minutes) : "—") + " minutes on one T4",
                options: { color: C.muted } }],
     { x: M, y: 6.35, w: 11.2, h: 0.3, fontFace: SANS, fontSize: 10.5, charSpacing: 0.5, margin: 0 });

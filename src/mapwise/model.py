@@ -37,24 +37,34 @@ class DecoderBlock(nn.Module):
 
 
 class UNetResNet34(nn.Module):
-    """ResNet-34 encoder (ImageNet) + from-scratch U-Net decoder -> per-pixel class logits."""
+    """ResNet encoder (ImageNet) + from-scratch U-Net decoder -> per-pixel class logits.
 
-    def __init__(self, n_classes=7, pretrained=True):
+    Keeps its historical name so existing checkpoints load, but `encoder` selects the torso:
+    resnet34 (skip channels 256/128/64/64) or resnet50 (1024/512/256/64, bottleneck blocks).
+    """
+
+    def __init__(self, n_classes=7, pretrained=True, encoder="resnet34"):
         super().__init__()
-        w = torchvision.models.ResNet34_Weights.IMAGENET1K_V1 if pretrained else None
-        r = torchvision.models.resnet34(weights=w)
+        self.encoder_name = encoder
+        if encoder == "resnet50":
+            w = torchvision.models.ResNet50_Weights.IMAGENET1K_V2 if pretrained else None
+            r = torchvision.models.resnet50(weights=w)
+            c4, c3, c2, c1 = 2048, 1024, 512, 256
+        else:
+            w = torchvision.models.ResNet34_Weights.IMAGENET1K_V1 if pretrained else None
+            r = torchvision.models.resnet34(weights=w)
+            c4, c3, c2, c1 = 512, 256, 128, 64
 
-        # encoder stages, channels: 64, 64, 128, 256, 512
         self.stem = nn.Sequential(r.conv1, r.bn1, r.relu)   # /2   64
         self.pool = r.maxpool                               # /4
-        self.layer1 = r.layer1                              # /4   64
-        self.layer2 = r.layer2                              # /8   128
-        self.layer3 = r.layer3                              # /16  256
-        self.layer4 = r.layer4                              # /32  512
+        self.layer1 = r.layer1                              # /4   c1
+        self.layer2 = r.layer2                              # /8   c2
+        self.layer3 = r.layer3                              # /16  c3
+        self.layer4 = r.layer4                              # /32  c4
 
-        self.dec4 = DecoderBlock(512, 256, 256)             # /16
-        self.dec3 = DecoderBlock(256, 128, 128)             # /8
-        self.dec2 = DecoderBlock(128, 64, 64)               # /4
+        self.dec4 = DecoderBlock(c4, c3, 256)               # /16
+        self.dec3 = DecoderBlock(256, c2, 128)              # /8
+        self.dec2 = DecoderBlock(128, c1, 64)               # /4
         self.dec1 = DecoderBlock(64, 64, 48)                # /2
         self.dec0 = DecoderBlock(48, 0, 32)                 # /1
         self.head = nn.Conv2d(32, n_classes, 1)

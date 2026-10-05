@@ -33,15 +33,21 @@ def class_pixel_counts(ds, n_classes, sample=60):
     return counts
 
 
-def evaluate(net, loader, dev, n_classes):
+def evaluate(net, loader, dev, n_classes, ignore=(), tta=False):
+    """Validation pass. With `tta`, average the softmax over the 4 flip/rotation symmetries;
+    aerial imagery has no canonical orientation, so these are all equally valid views."""
     net.eval()
-    tr = IoUTracker(n_classes)
+    tr = IoUTracker(n_classes, ignore=ignore)
     with torch.no_grad():
         for x, y in loader:
             x = x.to(dev, non_blocking=True)
             with torch.autocast("cuda", enabled=dev.type == "cuda"):
-                logits = net(x)
-            tr.update(logits.argmax(1).cpu(), y)
+                probs = net(x).softmax(1).float()
+                if tta:
+                    for dims in ([-1], [-2], [-1, -2]):
+                        probs = probs + torch.flip(net(torch.flip(x, dims)).softmax(1).float(), dims)
+                    probs = probs / 4.0
+            tr.update(probs.argmax(1).cpu(), y)
     return tr
 
 
@@ -56,6 +62,10 @@ def main():
     ap.add_argument("--workers", type=int, default=2)
     ap.add_argument("--val-frac", type=float, default=0.1)
     ap.add_argument("--limit", type=int, default=0, help="debug: cap training tiles")
+    ap.add_argument("--encoder", default="resnet34", choices=["resnet34", "resnet50"])
+    ap.add_argument("--ignore-class", default="unknown",
+                    help="class name excluded from the mean IoU (void/catch-all); '' to keep all")
+    ap.add_argument("--tta", action="store_true", help="flip/rotation test-time augmentation at validation")
     args = ap.parse_args()
 
     out = Path(args.out); out.mkdir(parents=True, exist_ok=True)
@@ -88,7 +98,17 @@ def main():
     print(json.dumps(meta), flush=True)
     (out / "meta.json").write_text(json.dumps(meta, indent=2))
 
-    net = UNetResNet34(n_classes).to(dev)
+    ignore = []
+    if args.ignore_class:
+        for i, nm in enumerate(names):
+            if nm.strip().lower() == args.ignore_class.strip().lower():
+                ignore.append(i)
+    meta["ignore_class"] = args.ignore_class or None
+    meta["ignore_index"] = ignore
+    meta["encoder"] = args.encoder
+    (out / "meta.json").write_text(json.dumps(meta, indent=2))
+
+    net = UNetResNet34(n_classes, encoder=args.encoder).to(dev)
     crit = DiceCELoss(n_classes, weights).to(dev)
     opt = torch.optim.AdamW(net.parameters(), lr=args.lr, weight_decay=1e-4)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=args.epochs)
@@ -111,7 +131,7 @@ def main():
             tot += float(loss); nb += 1
         sched.step()
 
-        tr = evaluate(net, dl_va, dev, n_classes)
+        tr = evaluate(net, dl_va, dev, n_classes, ignore=ignore, tta=args.tta)
         ious = tr.iou()
         row = {"epoch": ep, "loss": round(tot / max(nb, 1), 4), "mIoU": round(tr.mean_iou(), 4),
                "pixacc": round(tr.pixel_acc(), 4), "minutes": round((time.time() - t0) / 60, 1),

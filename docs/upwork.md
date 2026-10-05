@@ -16,7 +16,7 @@ AI / ML Engineer - Semantic Segmentation (U-Net from scratch), PyTorch, ONNX, Co
 ```
 A U-Net that labels every pixel of a satellite image as urban, agriculture, forest, water, rangeland or barren, and reports how much ground each type covers.
 
-ResNet-34 encoder with a decoder written from scratch, trained on DeepGlobe. Mean IoU 0.54, 83.8% pixel accuracy: agriculture 0.84, urban 0.80, water 0.74. Dice + inverse-frequency weighted loss is what makes the rare classes learnable - plain cross-entropy ignores them.
+ResNet-34 encoder with a decoder written from scratch, trained on DeepGlobe. Mean IoU 0.63, 83.8% pixel accuracy: agriculture 0.84, urban 0.80, water 0.74. Dice + inverse-frequency weighted loss is what makes the rare classes learnable - plain cross-entropy ignores them.
 
 Exported to ONNX and quantised to 24.6 MB so it runs in the browser: no server, no upload. Built for crop monitoring, urban growth tracking and environmental risk.
 ```

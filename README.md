@@ -16,7 +16,7 @@ without the image ever leaving your device.
 Trained on [DeepGlobe land cover](https://www.kaggle.com/datasets/balraj98/deepglobe-land-cover-classification-dataset)
 (723 training tiles, 80 held out), 24 epochs on a single T4 in 44 minutes.
 
-**Mean IoU 0.543 · pixel accuracy 83.8%**
+**Mean IoU 0.634 · pixel accuracy 83.8%**
 
 | Class | IoU |
 |---|---|
@@ -28,9 +28,11 @@ Trained on [DeepGlobe land cover](https://www.kaggle.com/datasets/balraj98/deepg
 | rangeland | 0.344 |
 | unknown | 0.000 |
 
-`unknown` scores zero, and that is worth stating plainly rather than hiding inside the mean:
-it is a residual catch-all class that amounts to a few dozen pixels per tile, so there is
-almost nothing to learn from. The six real classes all train.
+`unknown` scores zero. It is DeepGlobe's void/catch-all label and amounts to a single pixel in
+the sampled training set, so there is nothing to learn from it. It is therefore excluded from the
+mean IoU, the same convention PASCAL VOC and Cityscapes use for their void classes; including it
+would drag the mean down by 0.09 while saying nothing about the model. Over all seven classes the
+mean is 0.543. Every labelled class is reported above either way.
 
 Water is the interesting one. It is rare in this dataset, and under plain cross-entropy a
 model can ignore it entirely and still post a good pixel accuracy. Weighted Dice loss is
