@@ -55,8 +55,8 @@ function heading(s, parts, y, size) {
     fontFace: SER, fontSize: size === undefined ? 44 : size, color: C.ink,
     charSpacing: 1.5, margin: 0, lineSpacingMultiple: 1.0 });
 }
-function body(s, t, x, y, w, size) {
-  s.addText(t, { x: x === undefined ? M : x, y: y, w: w === undefined ? 6.6 : w, h: 1.4,
+function body(s, t, x, y, w, size, h) {
+  s.addText(t, { x: x === undefined ? M : x, y: y, w: w === undefined ? 6.6 : w, h: h === undefined ? 1.4 : h,
     fontFace: SANSL, fontSize: size === undefined ? 13 : size, color: C.ink2, margin: 0, lineSpacingMultiple: 1.45 });
 }
 // soft yellow underline, the template's only strong colour
@@ -65,9 +65,17 @@ function dash(s, x, y, w) {
     fill: { color: C.accent }, line: { type: "none" } });
 }
 // thin outlined circle holding a statistic — the template's stat rings
-function ring(s, x, y, d, value, label, sub) {
+// A stat ring whose yellow arc actually spans the value. A decorative dot reads as a
+// nearly-empty progress bar, which makes a strong number look like a weak one.
+function ring(s, x, y, d, frac, value, label, sub) {
   s.addShape(pres.shapes.OVAL, { x: x, y: y, w: d, h: d, fill: { color: C.paper }, line: { color: C.line, width: 1.25 } });
-  s.addShape(pres.shapes.OVAL, { x: x + d * 0.5 - 0.055, y: y - 0.055, w: 0.11, h: 0.11, fill: { color: C.accent }, line: { type: "none" } });
+  if (frac !== null && frac !== undefined && frac > 0) {
+    s.addShape(pres.shapes.ARC, {
+      x: x, y: y, w: d, h: d,
+      angleRange: [270, 270 + Math.min(frac, 1) * 360],
+      line: { color: C.accent, width: 4 },
+    });
+  }
   s.addText(value, { x: x, y: y + d * 0.30, w: d, h: d * 0.34, fontFace: SER, fontSize: 30, color: C.ink, align: "center", valign: "middle", margin: 0 });
   s.addText(label, { x: x - 0.25, y: y + d + 0.14, w: d + 0.5, h: 0.26, fontFace: SANS, fontSize: 9.5, color: C.ink, charSpacing: 2, align: "center", margin: 0 });
   if (sub) s.addText(sub, { x: x - 0.45, y: y + d + 0.42, w: d + 0.9, h: 0.5, fontFace: SANSL, fontSize: 9.5, color: C.muted, align: "center", margin: 0, lineSpacingMultiple: 1.25 });
@@ -103,8 +111,8 @@ function footer(s, n) {
     s.addText("SATELLITE TILE → CLASSIFIED MAP", { x: 7.75, y: 4.62, w: 4.45, h: 0.3,
       fontFace: SANS, fontSize: 9, color: C.muted, charSpacing: 2, align: "center", margin: 0 });
   }
-  const rings = [[pc(MET.mIoU), "MEAN IoU"], [pc(MET.pixacc), "PIXEL ACCURACY"]];
-  rings.forEach(function (r, i) { ring(s, 8.3 + i * 2.1, 5.45, 1.25, r[0], r[1], ""); });
+  const rings = [[MET.pixacc, pc(MET.pixacc), "PIXELS CORRECT"], [MET.mIoU, pc(MET.mIoU), "MEAN IoU"]];
+  rings.forEach(function (r, i) { ring(s, 8.3 + i * 2.1, 5.45, 1.25, r[0], r[1], r[2], ""); });
 }
 
 // ============================================== 3. HOW IT WORKS
@@ -112,20 +120,20 @@ function footer(s, n) {
   kicker(s, "ARCHITECTURE");
   heading(s, [{ text: "How it works" }], 1.8, 42);
   dash(s, M, 2.95);
-  body(s, "A U-Net: a pretrained encoder reads the image, a decoder written from scratch rebuilds it as labels.", M, 3.25, 9.5, 13);
+  body(s, "A U-Net: a pretrained encoder reads the image, a decoder written from scratch rebuilds it as labels.", M, 3.22, 10.5, 13, 0.34);
   const steps = [["01", "ENCODE", "A ResNet-34 compresses the tile into a feature pyramid, from fine texture to coarse context."],
                  ["02", "DECODE", "Four upsampling blocks rebuild full resolution, each re-joining the matching encoder detail."],
                  ["03", "CLASSIFY", "A 1x1 convolution turns every pixel's features into seven class scores."],
                  ["04", "MEASURE", "Pixel counts become ground-cover percentages — the number a client actually uses."]];
   const cw = (W - 2 * M - 3 * 0.42) / 4;
   steps.forEach(function (st, i) {
-    const x = M + i * (cw + 0.42), y = 4.05;
+    const x = M + i * (cw + 0.42), y = 4.22;
     s.addShape(pres.shapes.RECTANGLE, { x: x, y: y, w: cw, h: 0.045, fill: { color: C.accent }, line: { type: "none" } });
     s.addText(st[0], { x: x, y: y + 0.22, w: cw, h: 0.4, fontFace: SER, fontSize: 24, color: C.muted, margin: 0 });
     s.addText(st[1], { x: x, y: y + 0.78, w: cw, h: 0.3, fontFace: SANS, fontSize: 11, color: C.ink, charSpacing: 2.5, margin: 0 });
     s.addText(st[2], { x: x, y: y + 1.14, w: cw, h: 1.5, fontFace: SANSL, fontSize: 11, color: C.muted, margin: 0, lineSpacingMultiple: 1.4 });
   });
-  s.addText("Skip connections are why the edges stay sharp.", { x: M, y: 6.6, w: 9, h: 0.3,
+  s.addText("Skip connections are why the edges stay sharp.", { x: M, y: 6.82, w: 9, h: 0.3,
     fontFace: SER, fontSize: 15, italic: true, color: C.ink2, margin: 0 });
 }
 
@@ -151,17 +159,19 @@ function footer(s, n) {
   kicker(s, "ACCURACY, CLASS BY CLASS");
   heading(s, [{ text: "What it gets right — " }, { text: "and what it doesn't", options: { italic: true, color: C.ink2 } }], 1.8, 36);
   dash(s, M, 3.0);
-  const rings = [[pc(cl("agriculture_land")), "AGRICULTURE"], [pc(cl("urban_land")), "URBAN"],
-                 [pc(cl("water")), "WATER"], [pc(cl("forest_land")), "FOREST"]];
-  rings.forEach(function (r, i) { ring(s, M + 0.15 + i * 1.95, 3.45, 1.3, r[0], r[1], ""); });
+  const rings = [[cl("agriculture_land"), "AGRICULTURE"], [cl("urban_land"), "URBAN"],
+                 [cl("water"), "WATER"], [cl("forest_land"), "FOREST"]];
+  rings.forEach(function (r, i) { ring(s, M + 0.15 + i * 1.95, 3.45, 1.3, r[0], pc(r[0]), r[1], ""); });
   s.addShape(pres.shapes.RECTANGLE, { x: 8.75, y: 3.3, w: 3.45, h: 2.5, fill: { color: C.card }, line: { type: "none" } });
   s.addText("The rare classes are hard.", { x: 9.0, y: 3.55, w: 3.0, h: 0.35, fontFace: SER, fontSize: 17, color: C.ink, margin: 0 });
   s.addText("DeepGlobe is heavily imbalanced. Weighted Dice loss lifts rangeland (" + pc(cl("rangeland")) +
             ") and barren (" + pc(cl("barren_land")) + ") into usefulness, but 'unknown' is a few dozen pixels a tile and stays at zero.\n\nSo the numbers are published per class, not averaged away.",
     { x: 9.0, y: 4.0, w: 3.0, h: 1.7, fontFace: SANSL, fontSize: 10.5, color: C.muted, margin: 0, lineSpacingMultiple: 1.4 });
-  s.addText("Mean IoU " + pc(MET.mIoU) + "  ·  pixel accuracy " + pc(MET.pixacc) +
-            "  ·  " + (MET.epochs || "—") + " epochs in " + (MET.minutes ? Math.round(MET.minutes) : "—") + " minutes on one T4",
-    { x: M, y: 6.35, w: 11, h: 0.3, fontFace: SANS, fontSize: 10.5, color: C.ink2, charSpacing: 1, margin: 0 });
+  s.addText([{ text: pc(MET.pixacc) + " of all pixels land in the right class", options: { color: C.ink } },
+             { text: "   ·   mean IoU " + pc(MET.mIoU) + " across all seven classes, a deliberately strict measure   ·   " +
+                     (MET.epochs || "—") + " epochs in " + (MET.minutes ? Math.round(MET.minutes) : "—") + " minutes on one T4",
+               options: { color: C.muted } }],
+    { x: M, y: 6.35, w: 11.2, h: 0.3, fontFace: SANS, fontSize: 10.5, charSpacing: 0.5, margin: 0 });
 }
 
 // ============================================== 6. THE BUILD

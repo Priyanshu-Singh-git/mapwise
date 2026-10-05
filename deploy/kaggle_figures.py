@@ -20,7 +20,7 @@ KAGGLE = r"F:\tools\uv\bin\kaggle.exe"
 USER = "priyanshusingh308"
 DATASET = "balraj98/deepglobe-land-cover-classification-dataset"
 NAME = "mapwise-figures"
-SRC = ["src/mapwise/model.py", "src/mapwise/data.py", "eval/make_figures.py"]
+SRC = ["src/mapwise/model.py", "src/mapwise/data.py", "eval/make_figures.py", "eval/make_thumbnail.py"]
 
 RUN = r'''
 import json, os, glob, shutil, subprocess
@@ -43,6 +43,8 @@ print("DATA:", D, "tiles:", len(sat), flush=True)
 
 r = subprocess.run("python eval/make_figures.py --ckpt " + ck[0] + " --data " + D + " --n 4", shell=True)
 print("<<< figures exit", r.returncode, flush=True)
+r2 = subprocess.run("python eval/make_thumbnail.py --ckpt " + ck[0] + " --data " + D + " --scan 14", shell=True)
+print("<<< thumbnail exit", r2.returncode, flush=True)
 
 out = Path("/kaggle/working/figs"); out.mkdir(exist_ok=True)
 for f in glob.glob(str(W / "assets/figures/*.png")) + glob.glob(str(W / "docs/samples/*")):
